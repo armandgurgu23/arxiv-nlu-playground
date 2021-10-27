@@ -1,0 +1,3 @@
+defaults:
+  - data: exploration
+main_operation_mode: exploration
