@@ -29,6 +29,10 @@ class Corpus_Reader(object):
             self.paper_categories = self.cfg["data_path"].split("/")[-2].split("_")[0]
 
     @property
+    def paper_semantic_keywords_dict(self):
+        return self.paper_semantic_keywords
+
+    @property
     def labels(self):
         return self.paper_categories
 
