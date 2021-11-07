@@ -1,8 +1,9 @@
 from omegaconf import DictConfig
 from typing import Dict, Generator, Tuple, List, Any, Type, Union
 from data.corpus_reader import Corpus_Reader
-from json import dumps, load
+from json import dumps, loads
 from os import path
+from pprint import pp, pprint
 
 from logging import getLogger
 
@@ -25,22 +26,54 @@ class StaticTextAnalyzer(object):
             self.handle_paper_semantic_section_detection(
                 dataset_reader, dataset_reader_handler
             )
-        else:
+        elif (
+            self.cfg.data.static_text_analysis.static_text_analysis_mode
+            == "section-keywords-analysis"
+        ):
             path_to_analysis_file = self.get_section_keyword_analysis_file_path()
             jsonl_keyword_sums = StaticTextAnalyzer.get_jsonl_reader_iterator(
                 path_to_analysis_file
             )
-            for current_sum in jsonl_keyword_sums:
-                print(current_sum)
+            summary_dict = self.compute_semantic_section_full_dataset_metrics(
+                jsonl_keyword_sums
+            )
+        else:
             raise NotImplementedError("Support more static text analysis modes here!")
+        return
+
+    def compute_semantic_section_full_dataset_metrics(
+        self, jsonl_data_iter: Generator[Dict, None, None]
+    ):
+
+        dataset_size = 0
+        keywords_breakdown = {}
+        for current_sample in jsonl_data_iter:
+            dataset_size += 1
+            for current_section_type in current_sample["section_keyword_detection"]:
+                if current_section_type not in keywords_breakdown:
+                    keywords_breakdown[current_section_type] = {
+                        "count": 0,
+                        "paper_ids_missing": [],
+                    }
+                detection_section_info = current_sample["section_keyword_detection"][
+                    current_section_type
+                ]
+                if not isinstance(detection_section_info[0], str):
+                    keywords_breakdown[current_section_type]["count"] += 1
+                else:
+                    # This keyword was not detected so we track paper id that didn't have it.
+                    keywords_breakdown[current_section_type][
+                        "paper_ids_missing"
+                    ].append(current_sample["id"])
+        keywords_breakdown["dataset_size"] = dataset_size
+        pprint(keywords_breakdown)
         return
 
     @staticmethod
     def get_jsonl_reader_iterator(jsonl_file_path: str):
         with open(jsonl_file_path, "r") as file_object:
             for current_paper_summary in file_object:
-                print(current_paper_summary)
-                yield load(current_paper_summary)
+                yield loads(current_paper_summary)
 
     def get_section_keyword_analysis_file_path(self):
         return path.join(
