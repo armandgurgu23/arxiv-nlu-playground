@@ -4,6 +4,6 @@ static_text_analysis:
   static_text_analysis_mode: section-keywords-analysis
   semantic_section_keywords: all
   keywords_dump_path: section_keywords_summary.jsonl
-  section_keywords_analysis_path: /Users/armandgurgu/Documents/side_projects/arxiv-nlu-playground/src/outputs/2021-11-06/16-03-50
+  section_keywords_analysis_path: /Users/armandgurgu/Documents/side_projects/arxiv-nlu-playground/src/outputs/2021-11-08/23-14-30-test-set
 data_path: /Users/armandgurgu/Documents/datasets_side_projects/researchPapersDatasets/partitionedDataset/train/
 exploration_mode: 'static-text-analysis'

@@ -11,7 +11,13 @@ class Corpus_Reader(object):
         self.cfg = analyzer_cfg
         self.paper_contents_processor = Paper_Preprocessor()
         self.paper_semantic_keywords = {
-            "intro": ["introduction", "background", "overview"],
+            "intro": [
+                "introduction",
+                "background",
+                "overview",
+                "main text",
+                "Summary of the presentations",
+            ],
             "conc": ["conclusion", "discussion and results", "discussion"],
             "refer": ["references"],
             "acknow": ["acknowledgements"],

@@ -1,9 +1,9 @@
 from omegaconf import DictConfig
 from typing import Dict, Generator, Tuple, List, Any, Type, Union
 from data.corpus_reader import Corpus_Reader
-from json import dumps, loads
+from json import dumps
 from os import path
-from pprint import pp, pprint
+from utils.serialization_utils import get_jsonl_reader_iterator, write_dict_to_json_file
 
 from logging import getLogger
 
@@ -31,11 +31,14 @@ class StaticTextAnalyzer(object):
             == "section-keywords-analysis"
         ):
             path_to_analysis_file = self.get_section_keyword_analysis_file_path()
-            jsonl_keyword_sums = StaticTextAnalyzer.get_jsonl_reader_iterator(
+            jsonl_keyword_sums = StaticTextAnalyzer.get_jsonl_keywords_iterator(
                 path_to_analysis_file
             )
             summary_dict = self.compute_semantic_section_full_dataset_metrics(
                 jsonl_keyword_sums
+            )
+            StaticTextAnalyzer.write_keywords_json_to_disk(
+                "keywords_analysis.json", summary_dict
             )
         else:
             raise NotImplementedError("Support more static text analysis modes here!")
@@ -46,34 +49,57 @@ class StaticTextAnalyzer(object):
     ):
 
         dataset_size = 0
-        keywords_breakdown = {}
+        keywords_breakdown = {
+            "intro": {"count": 0, "paper_ids_missing": []},
+            "ending": {"count": 0, "paper_ids_missing": []},
+        }
+        endings_sample_assignment = {}
         for current_sample in jsonl_data_iter:
             dataset_size += 1
+            endings_sample_assignment[current_sample["id"]] = False
             for current_section_type in current_sample["section_keyword_detection"]:
-                if current_section_type not in keywords_breakdown:
-                    keywords_breakdown[current_section_type] = {
-                        "count": 0,
-                        "paper_ids_missing": [],
-                    }
                 detection_section_info = current_sample["section_keyword_detection"][
                     current_section_type
                 ]
                 if not isinstance(detection_section_info[0], str):
-                    keywords_breakdown[current_section_type]["count"] += 1
+                    if current_section_type == "intro":
+                        keywords_breakdown["intro"]["count"] += 1
+                    else:
+                        # Visiting an ending section.
+                        if not endings_sample_assignment[current_sample["id"]]:
+                            keywords_breakdown["ending"]["count"] += 1
+                            endings_sample_assignment[current_sample["id"]] = True
                 else:
                     # This keyword was not detected so we track paper id that didn't have it.
-                    keywords_breakdown[current_section_type][
-                        "paper_ids_missing"
-                    ].append(current_sample["id"])
+                    if current_section_type == "intro":
+                        keywords_breakdown[current_section_type][
+                            "paper_ids_missing"
+                        ].append(current_sample["id"])
         keywords_breakdown["dataset_size"] = dataset_size
-        pprint(keywords_breakdown)
-        return
+        keywords_breakdown["ending"][
+            "paper_ids_missing"
+        ] = self.find_missing_paper_ids_for_ending_section(endings_sample_assignment)
+        return keywords_breakdown
+
+    def find_missing_paper_ids_for_ending_section(
+        self, endings_assignment_dict: Dict[str, bool]
+    ):
+        missing_paper_ids = []
+        for current_paper_id in endings_assignment_dict:
+            paper_id_status = endings_assignment_dict[current_paper_id]
+            if not paper_id_status:
+                missing_paper_ids.append(current_paper_id)
+        return missing_paper_ids
 
     @staticmethod
-    def get_jsonl_reader_iterator(jsonl_file_path: str):
-        with open(jsonl_file_path, "r") as file_object:
-            for current_paper_summary in file_object:
-                yield loads(current_paper_summary)
+    def write_keywords_json_to_disk(
+        json_output_path: str, keywords_dict: Dict[str, Dict]
+    ):
+        return write_dict_to_json_file(json_output_path, keywords_dict)
+
+    @staticmethod
+    def get_jsonl_keywords_iterator(jsonl_file_path: str):
+        return get_jsonl_reader_iterator(jsonl_file_path)
 
     def get_section_keyword_analysis_file_path(self):
         return path.join(
