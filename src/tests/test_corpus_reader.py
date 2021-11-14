@@ -91,3 +91,27 @@ class TestCorpusReader:
                 "biology",
             ]
         )
+
+    def test_corpus_reader_detect_first_reference_in_paper(self):
+        with initialize(config_path="../config"):
+            cfg = compose(
+                config_name="config.yaml",
+                overrides=[
+                    "data=exploration",
+                    "data.data_path=/Users/armandgurgu/Documents/datasets_side_projects/researchPapersDatasets/partitionedDataset/train/astrophysics_54/paper.txt",
+                ],
+            )
+        corpus_reader = Corpus_Reader(**cfg.data)
+        test_paper_contents = corpus_reader()
+        test_paper_contents = (
+            corpus_reader.paper_contents_processor.remove_paper_contents_by_token_count(
+                test_paper_contents, cfg.data.token_processing.token_threshold
+            )
+        )
+        first_ref_matches = corpus_reader.find_first_reference_in_paper(
+            test_paper_contents
+        )
+        assert (
+            first_ref_matches[0][0]
+            == "1. Tanvir, N. R. et al. Nature 461, 1254-1257 (2009). \n"
+        ) and first_ref_matches[0][1] == 106

@@ -1,9 +1,12 @@
 textdistance_config:
   similarity_threshold: 0.70
 static_text_analysis:
-  static_text_analysis_mode: section-keywords-analysis
+  static_text_analysis_mode: first-reference-analysis
   semantic_section_keywords: all
-  keywords_dump_path: section_keywords_summary.jsonl
-  section_keywords_analysis_path: /Users/armandgurgu/Documents/side_projects/arxiv-nlu-playground/src/outputs/2021-11-08/23-14-30-test-set
+  keywords_dump_path: first_ref_summary.jsonl
+  section_keywords_analysis_path: /Users/armandgurgu/Documents/side_projects/arxiv-nlu-playground/src/outputs/2021-11-13/15-35-08
+token_processing:
+  token_threshold: 3
 data_path: /Users/armandgurgu/Documents/datasets_side_projects/researchPapersDatasets/partitionedDataset/train/
 exploration_mode: 'static-text-analysis'
+apply_paper_processor_in_reader: true

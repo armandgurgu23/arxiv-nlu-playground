@@ -4,12 +4,14 @@ from typing import Any, Dict, Generator, List, Tuple
 from os.path import isfile, isdir
 from data.paper_preprocessor import Paper_Preprocessor
 import textdistance
+import re
 
 
 class Corpus_Reader(object):
     def __init__(self, **analyzer_cfg: Dict):
         self.cfg = analyzer_cfg
-        self.paper_contents_processor = Paper_Preprocessor()
+        if self.cfg["apply_paper_processor_in_reader"]:
+            self.paper_contents_processor = Paper_Preprocessor()
         self.paper_semantic_keywords = {
             "intro": [
                 "introduction",
@@ -34,6 +36,10 @@ class Corpus_Reader(object):
             # Input is a sample paper. Simple parsing based on dataset schema.
             self.paper_categories = self.cfg["data_path"].split("/")[-2].split("_")[0]
 
+        self.first_ref_year_pattern = re.compile("\(([1-9][0-9]{3})\)")
+        self.multi_authors_keyword = "et al"
+        self.second_char_non_digit_re = re.compile("1\D")
+
     @property
     def paper_semantic_keywords_dict(self):
         return self.paper_semantic_keywords
@@ -57,10 +63,57 @@ class Corpus_Reader(object):
     def __call__(self):
         raw_contents = self.open_contents_from_data_path(self.cfg["data_path"])
         if type(raw_contents) == list:
-            filtered_contents = self.paper_contents_processor(raw_contents)
-            return filtered_contents
+            if hasattr(self, "paper_contents_processor"):
+                filtered_contents = self.paper_contents_processor(raw_contents)
+                return filtered_contents
+            else:
+                return raw_contents
         else:
             return raw_contents
+
+    def find_first_reference_in_paper(
+        self, paper_contents: List[str]
+    ) -> List[Tuple[str, int]]:
+        first_ref_matches = []
+        for line_index, current_line in enumerate(paper_contents):
+            if current_line.startswith("[1]"):
+                return [(current_line, line_index)]
+            if current_line.startswith("1"):
+                first_ref_matches.append((current_line, line_index))
+        if len(first_ref_matches) == 1:
+            return first_ref_matches
+        else:
+            filtered_matches = self.select_first_reference_from_multiple_matches(
+                first_ref_matches
+            )
+            if filtered_matches:
+                return filtered_matches
+            else:
+                return self.select_first_reference_simpler_criterion(first_ref_matches)
+
+    def select_first_reference_simpler_criterion(self, matches: List[Tuple[str, int]]):
+        candidate_matches = []
+        for current_candidate, current_index in matches:
+            if (
+                self.second_char_non_digit_re.search(current_candidate)
+                and self.second_char_non_digit_re.search(current_candidate).span()[0]
+                == 0
+            ):
+                candidate_matches.append((current_candidate, current_index))
+        return candidate_matches
+
+    def select_first_reference_from_multiple_matches(
+        self, matches: List[Tuple[str, int]]
+    ) -> List[Tuple[str, int]]:
+        candidate_matches = []
+        for current_candidate, current_index in matches:
+            if self.first_ref_year_pattern.search(current_candidate) and (
+                self.second_char_non_digit_re.search(current_candidate)
+                and self.second_char_non_digit_re.search(current_candidate).span()[0]
+                == 0
+            ):
+                candidate_matches.append((current_candidate, current_index))
+        return candidate_matches
 
     def find_semantic_section_in_paper(
         self, paper_contents: List[str], section_type: str
@@ -111,6 +164,9 @@ class Corpus_Reader(object):
                 continue
             current_paper_filepath = join(data_path, current_paper_folder, "paper.txt")
             raw_paper_contents = self.open_file_contents(current_paper_filepath)
-            yield self.paper_contents_processor(
-                raw_paper_contents
-            ), current_paper_folder
+            if hasattr(self, "paper_contents_processor"):
+                yield self.paper_contents_processor(
+                    raw_paper_contents
+                ), current_paper_folder
+            else:
+                yield raw_paper_contents, current_paper_folder

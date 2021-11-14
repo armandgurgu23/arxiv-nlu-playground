@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 
 class Paper_Preprocessor(object):
@@ -16,6 +16,21 @@ class Paper_Preprocessor(object):
         filtered_contents = []
         for current_line in paper_contents:
             if current_line in {"\n", " \n", "\n "}:
+                continue
+            filtered_contents.append(current_line)
+        return filtered_contents
+
+    def remove_paper_contents_by_token_count(
+        self,
+        paper_contents: List[str],
+        token_thresh: int,
+        keep_semantic_line: Optional[str] = None,
+    ) -> List[str]:
+        filtered_contents = []
+        for current_line in paper_contents:
+            # TODO: Update this line here to not exclude references tokens.
+            current_line_tokens = current_line.split(" ")
+            if len(current_line_tokens) <= token_thresh:
                 continue
             filtered_contents.append(current_line)
         return filtered_contents

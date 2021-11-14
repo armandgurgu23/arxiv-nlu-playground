@@ -28,6 +28,18 @@ class StaticTextAnalyzer(object):
             )
         elif (
             self.cfg.data.static_text_analysis.static_text_analysis_mode
+            == "detect-first-reference"
+        ):
+            self.handle_paper_first_reference_detection(
+                dataset_reader, dataset_reader_handler
+            )
+        elif (
+            self.cfg.data.static_text_analysis.static_text_analysis_mode
+            == "first-reference-analysis"
+        ):
+            self.handle_first_reference_analysis_mode()
+        elif (
+            self.cfg.data.static_text_analysis.static_text_analysis_mode
             == "section-keywords-analysis"
         ):
             path_to_analysis_file = self.get_section_keyword_analysis_file_path()
@@ -43,6 +55,97 @@ class StaticTextAnalyzer(object):
         else:
             raise NotImplementedError("Support more static text analysis modes here!")
         return
+
+    def handle_first_reference_analysis_mode(self):
+        path_to_analysis_file = self.get_section_keyword_analysis_file_path()
+        jsonl_keyword_sums = StaticTextAnalyzer.get_jsonl_keywords_iterator(
+            path_to_analysis_file
+        )
+        (
+            single_count_ref_json,
+            non_single_count_ref_json,
+        ) = self.compute_first_reference_detection_breakdown(jsonl_keyword_sums)
+        StaticTextAnalyzer.write_keywords_json_to_disk(
+            "first_ref_single_counts_analysis.json", single_count_ref_json
+        )
+        StaticTextAnalyzer.write_keywords_json_to_disk(
+            "first_ref_non_single_counts_analysis.json", non_single_count_ref_json
+        )
+        hydra_logger.info("Finished analyzing first reference detection results!")
+        return
+
+    def compute_first_reference_detection_breakdown(
+        self, jsonl_data_iter: Generator[Dict, None, None]
+    ) -> Tuple[Dict, Dict]:
+        single_count_first_refs_json = {
+            "total_count": 0,
+            "dataset_size_diff": 0,
+            "samples_info": {},
+        }
+        non_single_count_refs_json = {
+            "total_count": 0,
+            "dataset_size_diff": 0,
+            "samples_info": {},
+        }
+        dataset_size = 0
+        for current_jsonl_sample in jsonl_data_iter:
+            dataset_size += 1
+            current_paper_id = current_jsonl_sample["id"]
+            if current_jsonl_sample["first_ref_det_info"]["count"] == 1:
+                single_count_first_refs_json["total_count"] += 1
+                single_count_first_refs_json["samples_info"][
+                    current_paper_id
+                ] = current_jsonl_sample["first_ref_det_info"]["ref_tuples"]
+            else:
+                non_single_count_refs_json["total_count"] += 1
+                non_single_count_refs_json["samples_info"][
+                    current_paper_id
+                ] = current_jsonl_sample["first_ref_det_info"]["ref_tuples"]
+        single_count_first_refs_json["dataset_size_diff"] = (
+            dataset_size - single_count_first_refs_json["total_count"]
+        )
+        non_single_count_refs_json["dataset_size_diff"] = (
+            dataset_size - non_single_count_refs_json["total_count"]
+        )
+        return single_count_first_refs_json, non_single_count_refs_json
+
+    def handle_paper_first_reference_detection(
+        self,
+        dataset_reader: Generator[Tuple[List[str], str], Any, Any],
+        dataset_reader_handler: Type[Corpus_Reader],
+    ):
+        hydra_logger.info("Searching dataset for presence of first reference!")
+        for current_paper_contents, paper_id in dataset_reader:
+            current_paper_contents = dataset_reader_handler.paper_contents_processor.remove_paper_contents_by_token_count(
+                current_paper_contents, self.cfg.data.token_processing.token_threshold
+            )
+            sample_first_ref_det = self.find_first_reference_matches_in_paper(
+                current_paper_contents, dataset_reader_handler, paper_id
+            )
+            self.write_keyword_summary_to_file(
+                sample_first_ref_det,
+                self.cfg.data.static_text_analysis.keywords_dump_path,
+            )
+        hydra_logger.info("Finished searching dataset for first reference!")
+        return
+
+    def find_first_reference_matches_in_paper(
+        self,
+        current_paper_contents: List[str],
+        dataset_reader_handler: Type[Corpus_Reader],
+        paper_id: str,
+    ):
+        detection_info_dict = {"id": paper_id, "first_ref_det_info": {}}
+        first_ref_matches = dataset_reader_handler.find_first_reference_in_paper(
+            current_paper_contents
+        )
+        if len(first_ref_matches) != 1:
+            hydra_logger.info(
+                f"Searching for first reference returned {len(first_ref_matches)} matches for paper {paper_id}! Inspect further!"
+            )
+        detection_info_dict["first_ref_det_info"]["count"] = len(first_ref_matches)
+        detection_info_dict["first_ref_det_info"]["ref_tuples"] = first_ref_matches
+        return detection_info_dict
 
     def compute_semantic_section_full_dataset_metrics(
         self, jsonl_data_iter: Generator[Dict, None, None]
