@@ -117,7 +117,9 @@ class StaticTextAnalyzer(object):
         hydra_logger.info("Searching dataset for presence of first reference!")
         for current_paper_contents, paper_id in dataset_reader:
             current_paper_contents = dataset_reader_handler.paper_contents_processor.remove_paper_contents_by_token_count(
-                current_paper_contents, self.cfg.data.token_processing.token_threshold
+                current_paper_contents,
+                self.cfg.data.token_processing.token_threshold,
+                dataset_reader_handler.paper_semantic_keywords["refer"],
             )
             sample_first_ref_det = self.find_first_reference_matches_in_paper(
                 current_paper_contents, dataset_reader_handler, paper_id
@@ -136,15 +138,31 @@ class StaticTextAnalyzer(object):
         paper_id: str,
     ):
         detection_info_dict = {"id": paper_id, "first_ref_det_info": {}}
-        first_ref_matches = dataset_reader_handler.find_first_reference_in_paper(
-            current_paper_contents
-        )
-        if len(first_ref_matches) != 1:
-            hydra_logger.info(
-                f"Searching for first reference returned {len(first_ref_matches)} matches for paper {paper_id}! Inspect further!"
+        try:
+            section_keyword_tuples = (
+                dataset_reader_handler.find_semantic_section_in_paper(
+                    current_paper_contents, "refer"
+                )
             )
-        detection_info_dict["first_ref_det_info"]["count"] = len(first_ref_matches)
-        detection_info_dict["first_ref_det_info"]["ref_tuples"] = first_ref_matches
+            detection_info_dict["first_ref_det_info"]["count"] = len(
+                section_keyword_tuples
+            )
+            detection_info_dict["first_ref_det_info"][
+                "ref_tuples"
+            ] = section_keyword_tuples
+        except AssertionError:
+            hydra_logger.info(
+                f"Paper {paper_id} does not contain a references section! Searching for start of numerical reference instead!"
+            )
+            first_ref_matches = dataset_reader_handler.find_first_reference_in_paper(
+                current_paper_contents
+            )
+            if len(first_ref_matches) != 1:
+                hydra_logger.info(
+                    f"Searching for first reference returned {len(first_ref_matches)} matches for paper {paper_id}! Inspect further!"
+                )
+            detection_info_dict["first_ref_det_info"]["count"] = len(first_ref_matches)
+            detection_info_dict["first_ref_det_info"]["ref_tuples"] = first_ref_matches
         return detection_info_dict
 
     def compute_semantic_section_full_dataset_metrics(

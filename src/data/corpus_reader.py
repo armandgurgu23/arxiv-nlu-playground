@@ -21,7 +21,7 @@ class Corpus_Reader(object):
                 "Summary of the presentations",
             ],
             "conc": ["conclusion", "discussion and results", "discussion"],
-            "refer": ["references"],
+            "refer": ["references", "literature", "bibliography"],
             "acknow": ["acknowledgements"],
         }
         self.keyword_similarity_criterion = (

@@ -4,7 +4,7 @@ static_text_analysis:
   static_text_analysis_mode: first-reference-analysis
   semantic_section_keywords: all
   keywords_dump_path: first_ref_summary.jsonl
-  section_keywords_analysis_path: /Users/armandgurgu/Documents/side_projects/arxiv-nlu-playground/src/outputs/2021-11-13/15-35-08
+  section_keywords_analysis_path: /Users/armandgurgu/Documents/side_projects/arxiv-nlu-playground/src/outputs/2021-11-13/23-52-50
 token_processing:
   token_threshold: 3
 data_path: /Users/armandgurgu/Documents/datasets_side_projects/researchPapersDatasets/partitionedDataset/train/

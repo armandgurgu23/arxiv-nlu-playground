@@ -24,11 +24,18 @@ class Paper_Preprocessor(object):
         self,
         paper_contents: List[str],
         token_thresh: int,
-        keep_semantic_line: Optional[str] = None,
+        keep_semantic_lines: Optional[List[str]] = None,
     ) -> List[str]:
         filtered_contents = []
         for current_line in paper_contents:
-            # TODO: Update this line here to not exclude references tokens.
+            found_section_keyword = False
+            if keep_semantic_lines:
+                for current_keyword_to_keep in keep_semantic_lines:
+                    if current_keyword_to_keep in current_line.lower():
+                        found_section_keyword = True
+            if found_section_keyword:
+                filtered_contents.append(current_line)
+                continue
             current_line_tokens = current_line.split(" ")
             if len(current_line_tokens) <= token_thresh:
                 continue
