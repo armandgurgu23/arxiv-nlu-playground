@@ -115,3 +115,25 @@ class TestCorpusReader:
             first_ref_matches[0][0]
             == "1. Tanvir, N. R. et al. Nature 461, 1254-1257 (2009). \n"
         ) and first_ref_matches[0][1] == 106
+
+    def test_corpus_reader_select_semantic_section(self):
+        multiple_sem_section_tuples = [
+            ("References 40\n", "references", 48),
+            ("References\n", "references", 1409),
+            ("\tReferences\n", "references", 1471),
+        ]
+        paper_length = 1472
+        with initialize(config_path="../config"):
+            cfg = compose(
+                config_name="config.yaml",
+                overrides=[
+                    "data=exploration",
+                    "data.data_path=/Users/armandgurgu/Documents/datasets_side_projects/researchPapersDatasets/partitionedDataset/train/astrophysics_54/paper.txt",
+                    "data.textdistance_config.selection_threshold_paper_len_pointer=0.8",
+                ],
+            )
+        corpus_reader = Corpus_Reader(**cfg.data)
+        selected_section = corpus_reader.select_semantic_section_tuple_from_choices(
+            multiple_sem_section_tuples, paper_length, 0.8
+        )
+        assert selected_section[0] == ("References\n", "references", 1409)

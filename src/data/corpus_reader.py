@@ -39,6 +39,7 @@ class Corpus_Reader(object):
         self.first_ref_year_pattern = re.compile("\(([1-9][0-9]{3})\)")
         self.multi_authors_keyword = "et al"
         self.second_char_non_digit_re = re.compile("1\D")
+        self.section_numbering_regex = re.compile("[0-9]")
 
     @property
     def paper_semantic_keywords_dict(self):
@@ -71,14 +72,37 @@ class Corpus_Reader(object):
         else:
             return raw_contents
 
+    def find_beginning_of_references_in_paper(
+        self, current_paper_contents: List[str], semantic_section_type: str
+    ):
+        try:
+            beginning_of_ref = self.find_semantic_section_in_paper(
+                current_paper_contents, semantic_section_type, True
+            )
+        except AssertionError:
+            beginning_of_ref = self.find_first_reference_in_paper(
+                current_paper_contents
+            )
+        return beginning_of_ref
+
     def find_first_reference_in_paper(
         self, paper_contents: List[str]
     ) -> List[Tuple[str, int]]:
         first_ref_matches = []
         for line_index, current_line in enumerate(paper_contents):
-            if current_line.startswith("[1]"):
+            if current_line.startswith("[1]") and (
+                line_index / len(paper_contents)
+                >= self.cfg["textdistance_config"][
+                    "selection_threshold_paper_len_pointer"
+                ]
+            ):
                 return [(current_line, line_index)]
-            if current_line.startswith("1"):
+            if current_line.startswith("1") and (
+                line_index / len(paper_contents)
+                >= self.cfg["textdistance_config"][
+                    "selection_threshold_paper_len_pointer"
+                ]
+            ):
                 first_ref_matches.append((current_line, line_index))
         if len(first_ref_matches) == 1:
             return first_ref_matches
@@ -116,24 +140,74 @@ class Corpus_Reader(object):
         return candidate_matches
 
     def find_semantic_section_in_paper(
-        self, paper_contents: List[str], section_type: str
+        self,
+        paper_contents: List[str],
+        section_type: str,
+        attempt_resolution: bool = False,
     ) -> List[Tuple[str, str, int]]:
         keyword_tuples = []
         for index_paper, current_line in enumerate(paper_contents):
             normalized_line = current_line.strip().lower()
+            normalized_line = self.section_numbering_regex.sub("", normalized_line)
             semantic_section_keywords = self.paper_semantic_keywords[section_type]
             for section_keyword in semantic_section_keywords:
                 if (
                     self.keyword_similarity_criterion(normalized_line, section_keyword)
                     >= self.cfg["textdistance_config"]["similarity_threshold"]
                 ):
-                    keyword_tuples.append((current_line, section_keyword, index_paper))
+                    if (index_paper / len(paper_contents)) < self.cfg[
+                        "textdistance_config"
+                    ]["selection_threshold_max_bound_pointer"]:
+                        keyword_tuples.append(
+                            (current_line, section_keyword, index_paper)
+                        )
         assert (
             len(keyword_tuples) != 0
         ), f"This lookup returned no semantic section for section type: {section_type}!"
         # For multiple entries, try out idea of returning the earliest index for that
         # section type.
-        return keyword_tuples
+        if attempt_resolution and len(keyword_tuples) > 1:
+            first_attempt_tuples = self.select_semantic_section_tuple_from_choices(
+                keyword_tuples,
+                len(paper_contents),
+                self.cfg["textdistance_config"][
+                    "selection_threshold_paper_len_pointer"
+                ],
+            )
+            if len(first_attempt_tuples) == 1:
+                return first_attempt_tuples
+            else:
+                return self.select_semantic_section_tuple_from_choices(
+                    keyword_tuples,
+                    len(paper_contents),
+                    self.cfg["textdistance_config"][
+                        "selection_threshold_paper_len_secondary"
+                    ],
+                )
+        else:
+            return keyword_tuples
+
+    def select_semantic_section_tuple_from_choices(
+        self,
+        semantic_section_tuples: List[Tuple[str, str, int]],
+        paper_num_lines: int,
+        selection_threshold: float,
+    ) -> List[Tuple[str, str, int]]:
+        candidate_ratios = []
+        candidate_indexes = []
+        for current_index, current_candidate in enumerate(semantic_section_tuples):
+            section_line_nr = current_candidate[-1]
+            ratio_pointer = section_line_nr / paper_num_lines
+            if ratio_pointer >= selection_threshold:
+                candidate_ratios.append(ratio_pointer)
+                candidate_indexes.append(current_index)
+        if candidate_ratios:
+            index_min = candidate_ratios.index(min(candidate_ratios))
+            return [semantic_section_tuples[candidate_indexes[index_min]]]
+        else:
+            # Greedy selection has failed, returning all the choices for
+            # further inspection.
+            return semantic_section_tuples
 
     def open_contents_from_data_path(self, data_path: str):
         if isfile(data_path):

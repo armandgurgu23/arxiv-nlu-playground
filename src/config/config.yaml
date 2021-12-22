@@ -1,3 +1,3 @@
 defaults:
-  - data: exploration
-main_operation_mode: exploration
+  - data: paper_cleanup
+main_operation_mode: paper-cleanup

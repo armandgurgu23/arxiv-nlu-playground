@@ -93,14 +93,24 @@ class StaticTextAnalyzer(object):
             current_paper_id = current_jsonl_sample["id"]
             if current_jsonl_sample["first_ref_det_info"]["count"] == 1:
                 single_count_first_refs_json["total_count"] += 1
-                single_count_first_refs_json["samples_info"][
-                    current_paper_id
-                ] = current_jsonl_sample["first_ref_det_info"]["ref_tuples"]
+                single_count_first_refs_json["samples_info"][current_paper_id] = {
+                    "ref_tuples": current_jsonl_sample["first_ref_det_info"][
+                        "ref_tuples"
+                    ]
+                }
+                single_count_first_refs_json["samples_info"][current_paper_id][
+                    "paper_len_count"
+                ] = current_jsonl_sample["paper_len_count"]
             else:
                 non_single_count_refs_json["total_count"] += 1
-                non_single_count_refs_json["samples_info"][
-                    current_paper_id
-                ] = current_jsonl_sample["first_ref_det_info"]["ref_tuples"]
+                non_single_count_refs_json["samples_info"][current_paper_id] = {
+                    "ref_tuples": current_jsonl_sample["first_ref_det_info"][
+                        "ref_tuples"
+                    ]
+                }
+                non_single_count_refs_json["samples_info"][current_paper_id][
+                    "paper_len_count"
+                ] = current_jsonl_sample["paper_len_count"]
         single_count_first_refs_json["dataset_size_diff"] = (
             dataset_size - single_count_first_refs_json["total_count"]
         )
@@ -141,7 +151,7 @@ class StaticTextAnalyzer(object):
         try:
             section_keyword_tuples = (
                 dataset_reader_handler.find_semantic_section_in_paper(
-                    current_paper_contents, "refer"
+                    current_paper_contents, "refer", True
                 )
             )
             detection_info_dict["first_ref_det_info"]["count"] = len(
@@ -163,6 +173,7 @@ class StaticTextAnalyzer(object):
                 )
             detection_info_dict["first_ref_det_info"]["count"] = len(first_ref_matches)
             detection_info_dict["first_ref_det_info"]["ref_tuples"] = first_ref_matches
+        detection_info_dict["paper_len_count"] = len(current_paper_contents)
         return detection_info_dict
 
     def compute_semantic_section_full_dataset_metrics(

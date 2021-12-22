@@ -3,13 +3,8 @@ textdistance_config:
   selection_threshold_paper_len_pointer: 0.7
   selection_threshold_paper_len_secondary: 0.5
   selection_threshold_max_bound_pointer: 0.99
-static_text_analysis:
-  static_text_analysis_mode: first-reference-analysis
-  semantic_section_keywords: all
-  keywords_dump_path: first_ref_summary.jsonl
-  section_keywords_analysis_path: /Users/armandgurgu/Documents/side_projects/arxiv-nlu-playground/src/outputs/2021-11-20/15-38-42
 token_processing:
   token_threshold: 3
 data_path: /Users/armandgurgu/Documents/datasets_side_projects/researchPapersDatasets/partitionedDataset/test/
-exploration_mode: 'static-text-analysis'
+paper_cleanup_mode: TBD
 apply_paper_processor_in_reader: true
