@@ -5,6 +5,6 @@ textdistance_config:
   selection_threshold_max_bound_pointer: 0.99
 token_processing:
   token_threshold: 3
-data_path: /Users/armandgurgu/Documents/datasets_side_projects/researchPapersDatasets/partitionedDataset/test/
-paper_cleanup_mode: TBD
+data_path: /Users/armandgurgu/Documents/datasets_side_projects/researchPapersDatasets/partitionedDataset/train/
+paper_cleanup_mode: generate-cleaned-papers
 apply_paper_processor_in_reader: true

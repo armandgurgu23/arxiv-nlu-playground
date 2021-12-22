@@ -12,6 +12,7 @@ pytest = "^6.2.5"
 textdistance = "^4.2.1"
 hydra-core = "^1.1.1"
 ipython = "^7.28.0"
+mlflow = "^1.22.0"
 
 [tool.poetry.dev-dependencies]
 
