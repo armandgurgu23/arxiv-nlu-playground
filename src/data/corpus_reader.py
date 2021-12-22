@@ -1,10 +1,13 @@
 from os import listdir
 from posixpath import join
-from typing import Any, Dict, Generator, List, Tuple
+from typing import Any, Dict, Generator, List, Tuple, Union
 from os.path import isfile, isdir
 from data.paper_preprocessor import Paper_Preprocessor
 import textdistance
 import re
+
+
+ReferenceInfo = Union[List[Tuple[str, str, int]], List[Tuple[str, int]]]
 
 
 class Corpus_Reader(object):
@@ -74,7 +77,7 @@ class Corpus_Reader(object):
 
     def find_beginning_of_references_in_paper(
         self, current_paper_contents: List[str], semantic_section_type: str
-    ):
+    ) -> ReferenceInfo:
         try:
             beginning_of_ref = self.find_semantic_section_in_paper(
                 current_paper_contents, semantic_section_type, True

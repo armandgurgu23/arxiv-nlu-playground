@@ -1,3 +1,5 @@
 defaults:
   - data: paper_cleanup
+  - save: temp_save
+  - _self_
 main_operation_mode: paper-cleanup
