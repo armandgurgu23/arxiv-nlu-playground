@@ -13,6 +13,7 @@ textdistance = "^4.2.1"
 hydra-core = "^1.1.1"
 ipython = "^7.28.0"
 mlflow = "^1.22.0"
+scikit-learn = "^1.0.1"
 
 [tool.poetry.dev-dependencies]
 
