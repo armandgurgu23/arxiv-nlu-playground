@@ -1,0 +1,4 @@
+
+experiment_task: text_classification
+model_framework: sklearn
+
