@@ -1,4 +1,13 @@
-
 experiment_task: text_classification
 model_framework: sklearn
+sklearn_model_config:
+  feature_preprocessing: true
+  model_type: sgd-classifier
+  feature_preprocessing_config:
+    use_standard_scaler: true
+  sgd_config:
+    loss: log
+    learning_rate: constant
+    eta0: 0.001
+
 
