@@ -1,3 +1,4 @@
+from typing import List
 from models.ml_model_base import MLModel, Dict, Any
 import mlflow.sklearn
 from sklearn.pipeline import Pipeline
@@ -33,8 +34,9 @@ class SklearnModel(MLModel):
 
 
 class SklearnTextClassifier(SklearnModel):
-    def __init__(self, model_config: Dict):
+    def __init__(self, model_config: Dict, class_ids: List[int]):
         super().__init__(model_config)
+        self.class_ids = class_ids
 
     def initialize_model_architecture(self, model_config: Dict):
         if model_config.sklearn_model_config.feature_preprocessing:
@@ -42,6 +44,15 @@ class SklearnTextClassifier(SklearnModel):
                 model_config.sklearn_model_config.feature_preprocessing_config
             )
         return self.setup_sklearn_classifier(model_config.sklearn_model_config)
+
+    def compute_loss(self, prediction_logits: Any, ground_truth: Any):
+        self.model.partial_fit(prediction_logits, ground_truth, classes=self.class_ids)
+        return
+
+    def forward_pass(self, input_data: Any):
+        if hasattr(self, "feature_preprocessors"):
+            input_data = self.feature_preprocessors.fit_transform(input_data)
+        return input_data
 
     def setup_feature_preprocessor(self, feature_preprocessor_config: Dict):
         pipeline_steps = []
@@ -56,13 +67,3 @@ class SklearnTextClassifier(SklearnModel):
             raise NotImplementedError(
                 f"For sklearn engine, training text classifier {sklearn_model_config.model_type} is not supported!"
             )
-
-    def compute_loss(self, prediction_logits: Any, ground_truth: Any):
-        # NOTE: AFAIK, Sklearn models' loss functions are internal and cannot be manually
-        # controlled. Therefore this method is a no-op for sklearn models.
-        return
-
-    def forward_pass(self, input_data: Any):
-        if hasattr(self, "feature_preprocessors"):
-            input_data = self.feature_preprocessors.fit_transform(input_data)
-        return self.model.partial_fit(input_data)
