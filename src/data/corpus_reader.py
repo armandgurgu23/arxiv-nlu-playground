@@ -3,6 +3,7 @@ from posixpath import join
 from typing import Any, Dict, Generator, List, Tuple, Union
 from os.path import isfile, isdir
 from data.paper_preprocessor import Paper_Preprocessor
+from utils.dataset_utils import get_all_classes_for_text_classification
 import textdistance
 import re
 
@@ -52,17 +53,8 @@ class Corpus_Reader(object):
     def labels(self):
         return self.paper_categories
 
-    def find_all_paper_categories(self, data_path):
-        # Yield the contents of one research paper at a time.
-        paper_folders = listdir(data_path)
-        paper_categories = set()
-        for current_paper_folder in paper_folders:
-            if current_paper_folder.startswith("."):
-                continue
-            category_paper = current_paper_folder.split("_")[0]
-            if category_paper not in paper_categories:
-                paper_categories.add(category_paper)
-        return list(paper_categories)
+    def find_all_paper_categories(self, data_path: str):
+        return get_all_classes_for_text_classification(data_path)
 
     def __call__(self):
         raw_contents = self.open_contents_from_data_path(self.cfg["data_path"])
