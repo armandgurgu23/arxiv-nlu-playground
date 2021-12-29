@@ -1,1 +1,6 @@
-data_path: /
+data_path: /Users/armandgurgu/Documents/datasets_side_projects/researchPapersDatasets/processedPaperDataset_2021-12-23_12-48-04
+shuffle_dataset: true
+batch_size: 2 # Batch size = num research papers
+sklearn_feature_extraction:
+  hashing_vectorizer:
+    norm: l2

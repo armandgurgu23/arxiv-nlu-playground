@@ -4,3 +4,4 @@ defaults:
   - models: text_classification
   - _self_
 main_operation_mode: paper-cleanup
+experiment_seed: 43
