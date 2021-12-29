@@ -6,6 +6,7 @@ from utils.dataset_utils import get_all_classes_for_text_classification
 from logging import getLogger
 import re
 import random
+from sklearn.feature_extraction.text import HashingVectorizer
 
 hydra_logger = getLogger(__name__)
 
@@ -26,6 +27,9 @@ class SklearnTextClassificationReader:
             self.dataset_path
         )
         self.punctuation_regex = re.compile("[.!?]")
+        self.feature_extractor = HashingVectorizer(
+            **self.reader_cfg.sklearn_feature_extraction.hashing_vectorizer
+        )
 
     @property
     def labels(self):
@@ -35,6 +39,10 @@ class SklearnTextClassificationReader:
         dataset_paper_ids = listdir(self.dataset_path)
         if self.experiment_seed:
             self.shuffle_papers(self.experiment_seed, dataset_paper_ids)
+        minibatch_counter = 0
+        minibatch_papers = []
+        minibatch_labels = []
+        minibatch_paper_ids = []
         for paper_id in dataset_paper_ids:
             if paper_id.split("_")[0] not in self.paper_categories:
                 logging.warning(
@@ -50,8 +58,17 @@ class SklearnTextClassificationReader:
             paper_label_vector = self.create_paper_contents_label_vector(
                 paper_id, len(paper_sentences)
             )
-            print(paper_label_vector)
-            raise NotImplementedError()
+            minibatch_papers += paper_sentences
+            minibatch_labels += paper_label_vector
+            minibatch_paper_ids.append(paper_id)
+            minibatch_counter += 1
+            if minibatch_counter % self.reader_cfg.batch_size == 0:
+                yield self.feature_extractor.transform(
+                    minibatch_papers
+                ), minibatch_labels, minibatch_paper_ids
+                minibatch_papers = []
+                minibatch_labels = []
+                minibatch_paper_ids = []
 
     def shuffle_papers(self, seed: int, paper_ids: List[str]) -> None:
         random.seed(seed)
