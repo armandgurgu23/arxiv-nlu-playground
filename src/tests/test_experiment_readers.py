@@ -12,7 +12,7 @@ class TestSklearnTextClassificationReader:
                     "data=experiments",
                     "data.data_path=/Users/armandgurgu/Documents/datasets_side_projects/researchPapersDatasets/processedPaperDataset_2021-12-23_12-48-04",
                     "data.batch_size=2",
-                    "models=text_classification",
+                    "models=text_classification_sklearn",
                     "models.sklearn_model_config.model_type=sgd-classifier",
                     "models.sklearn_model_config.sgd_config.learning_rate=constant",
                 ],

@@ -1,5 +1,3 @@
-experiment_task: text_classification
-model_framework: sklearn
 sklearn_model_config:
   feature_preprocessing: true
   model_type: sgd-classifier

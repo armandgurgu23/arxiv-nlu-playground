@@ -1,7 +1,8 @@
 defaults:
-  - data: paper_cleanup
+  - data: experiments
   - save: temp_save
-  - models: text_classification
+  - models: text_classification_sklearn
+  - trainer: text_classification_trainer
   - _self_
-main_operation_mode: paper-cleanup
+main_operation_mode: experiment
 experiment_seed: 43
