@@ -1,11 +1,11 @@
 from omegaconf import DictConfig
+from trainer.trainer import TextClassificationTrainer
 
 
 def main_text_classification_experiment_mode(cfg: DictConfig):
-    print(cfg)
-    raise NotImplementedError(
-        "Please insert logic for running an experiment-text classification!"
-    )
+    tc_experiment_trainer = TextClassificationTrainer(cfg)
+    tc_experiment_trainer()
+    return
 
 
 def main_experiment_mode(cfg: DictConfig):
