@@ -3,6 +3,7 @@ defaults:
   - save: temp_save
   - models: text_classification_sklearn
   - trainer: text_classification_trainer
+  - metrics: text_classification_metrics
   - _self_
 main_operation_mode: experiment
 experiment_seed: 43

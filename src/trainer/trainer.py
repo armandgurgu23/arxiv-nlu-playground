@@ -31,7 +31,8 @@ class TextClassificationTrainer:
             )
 
     def run_sklearn_training_loop(self, cfg: DictConfig):
-        raise NotImplementedError("Insert full trainer logic for sklearn here!")
+        for current_epoch in cfg.trainer.train_epochs:
+            pass
 
     def run_tensorflow_training_loop(self, cfg: DictConfig):
         raise NotImplementedError("Insert full trainer logic for tensorflow here!")

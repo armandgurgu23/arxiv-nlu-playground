@@ -1,0 +1,6 @@
+metrics_config:
+  threshold: 0.5
+  train_config:
+    compute_on_step: true
+  test_config:
+    compute_on_step: false 
