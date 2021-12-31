@@ -41,3 +41,7 @@ class TestTextClassificationMetrics:
             tc_valid_metrics.metrics_summary["accuracy"].__dict__["compute_on_step"]
             == False
         )
+
+    def test_text_classification_metrics_global_calculation(self):
+        # TODO: Implement this test.
+        pass
