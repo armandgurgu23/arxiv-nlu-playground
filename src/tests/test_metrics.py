@@ -65,12 +65,17 @@ class TestTextClassificationMetrics:
         mock_preds_b2 = [[1, 0, 1, 3], [1, 0, 1, 2]]
         ground_truths_b2 = [[1, 2, 1, 2], [1, 3, 1, 1]]
         all_mock_predictions = np.array([mock_preds_b1, mock_preds_b2])
-        all_mock_gt = np.array([ground_truths_b1, ground_truths_b2])
+        all_mock_gt = np.array([ground_truths_b1, ground_truths_b2], dtype=np.int32)
         tc_train_metrics = TextClassificationMetrics(
             cfg.metrics, num_labels=4, dataset_type="train"
         )
+        samplewise_metric_values = []
         for batch_index in range(all_mock_predictions.shape[0]):
             batch_preds = all_mock_predictions[batch_index, ...]
             batch_gt = all_mock_gt[batch_index, ...]
-            tc_train_metrics(batch_preds, batch_gt)
-        assert 2 == 2
+            curr_metric_info = tc_train_metrics(batch_preds, batch_gt)
+            samplewise_metric_values.append(curr_metric_info)
+        global_metric_info = tc_train_metrics.compute_global_metric_performance()
+        assert samplewise_metric_values[0]["precision"].item() == 0.7500
+        assert samplewise_metric_values[1]["precision"].item() == 0.5000
+        assert global_metric_info["precision"].item() == 0.625
