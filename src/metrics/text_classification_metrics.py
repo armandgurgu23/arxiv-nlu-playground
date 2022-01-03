@@ -62,9 +62,12 @@ class TextClassificationMetrics:
                 ),
             }
 
-    def __call__(self, predictions: Any, ground_truth: List[int]):
+    def __call__(self, predictions: Any, ground_truth: Any):
         # TODO: Change the type of predictions later.
         # Compute the minibatch metric performance here.
+        predictions, ground_truth = self.check_and_transform_data_to_torch_tensors(
+            predictions, ground_truth
+        )
         per_step_metric = {
             "accuracy": None,
             "precision": None,
@@ -78,6 +81,13 @@ class TextClassificationMetrics:
             )
             per_step_metric[current_metric] = metric_value
         return per_step_metric
+
+    def check_and_transform_data_to_torch_tensors(
+        self, predictions: Any, ground_truth: List[int]
+    ):
+        raise NotImplementedError(
+            "Please implement logic to transform to common data form here!"
+        )
 
     def compute_global_metric_performance(self):
         global_metrics_summary = {
