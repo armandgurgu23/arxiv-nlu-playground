@@ -2,6 +2,7 @@ from typing import List
 from omegaconf import DictConfig
 from models.sklearn_text_classifier import SklearnTextClassifier
 from data.experiment_corpus_readers import SklearnTextClassificationReader
+from metrics.text_classification_metrics import TextClassificationMetrics
 
 
 class TextClassificationTrainer:
@@ -14,6 +15,16 @@ class TextClassificationTrainer:
             self.full_config.trainer.model_framework,
             self.full_config,
             self.train_reader.labels,
+        )
+        self.train_metrics = TextClassificationMetrics(
+            self.full_config.metrics,
+            num_labels=len(self.train_reader.labels),
+            dataset_type="train",
+        )
+        self.valid_metrics = TextClassificationMetrics(
+            self.full_config.metrics,
+            num_labels=len(self.valid_reader.labels),
+            dataset_type="test",
         )
 
     def __call__(self):
@@ -31,8 +42,8 @@ class TextClassificationTrainer:
             )
 
     def run_sklearn_training_loop(self, cfg: DictConfig):
-        for current_epoch in cfg.trainer.train_epochs:
-            pass
+        for current_epoch in range(cfg.trainer.train_epochs):
+            raise NotImplementedError("Add logic for all the training loop here!")
 
     def run_tensorflow_training_loop(self, cfg: DictConfig):
         raise NotImplementedError("Insert full trainer logic for tensorflow here!")
