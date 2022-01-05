@@ -37,6 +37,8 @@ class SklearnTextClassifier(SklearnModel):
     def __init__(self, model_config: Dict, class_ids: List[int]):
         super().__init__(model_config)
         self.class_ids = class_ids
+        print(self.class_ids)
+        print("Class ids of the model!")
 
     def initialize_model_architecture(self, model_config: Dict):
         if model_config.sklearn_model_config.feature_preprocessing:
@@ -57,7 +59,14 @@ class SklearnTextClassifier(SklearnModel):
     def setup_feature_preprocessor(self, feature_preprocessor_config: Dict):
         pipeline_steps = []
         if feature_preprocessor_config.use_standard_scaler:
-            pipeline_steps.append(("standard-scaler", StandardScaler()))
+            pipeline_steps.append(
+                (
+                    "standard-scaler",
+                    StandardScaler(
+                        **feature_preprocessor_config.standard_scaler_config
+                    ),
+                )
+            )
         return Pipeline(pipeline_steps)
 
     def setup_sklearn_classifier(self, sklearn_model_config: Dict):

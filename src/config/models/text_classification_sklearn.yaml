@@ -3,6 +3,8 @@ sklearn_model_config:
   model_type: sgd-classifier
   feature_preprocessing_config:
     use_standard_scaler: true
+    standard_scaler_config:
+      with_mean: false
   sgd_config:
     loss: log
     learning_rate: constant
