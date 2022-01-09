@@ -56,6 +56,7 @@ class TestTextClassificationMetrics:
                     "models.sklearn_model_config.sgd_config.learning_rate=constant",
                     "metrics=text_classification_metrics",
                     "metrics.metrics_config.threshold=0.5",
+                    "metrics.metrics_config.mdmc_average=samplewise",
                     "metrics.metrics_config.train_config.compute_on_step=true",
                     "metrics.metrics_config.test_config.compute_on_step=false",
                 ],

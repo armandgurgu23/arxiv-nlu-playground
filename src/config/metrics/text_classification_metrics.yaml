@@ -1,6 +1,6 @@
 metrics_config:
   threshold: 0.5
-  mdmc_average: samplewise
+  mdmc_average: null
   train_config:
     compute_on_step: true
   test_config:

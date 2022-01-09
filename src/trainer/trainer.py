@@ -4,6 +4,8 @@ from models.sklearn_text_classifier import SklearnTextClassifier
 from data.experiment_corpus_readers import SklearnTextClassificationReader
 from metrics.text_classification_metrics import TextClassificationMetrics
 from logging import getLogger
+import numpy as np
+import os
 
 hydra_logger = getLogger(__name__)
 
@@ -61,15 +63,24 @@ class TextClassificationTrainer:
             f"Trainer initialized sklearn model! Training model for {cfg.trainer.train_epochs} epochs!"
         )
         for current_epoch in range(cfg.trainer.train_epochs):
-            hydra_logger.info(f"Starting epoch {current_epoch}")
+            hydra_logger.info(f"Starting training epoch {current_epoch}")
             self.train_reader, self.valid_reader = self.initialize_dataset_readers(
                 self.full_config.trainer.model_framework, self.full_config
             )
             self.run_sklearn_training_epoch(self.train_reader)
             self.run_sklearn_validation_epoch(self.valid_reader)
+            if (
+                current_epoch % self.full_config.trainer.save_after_num_epochs == 0
+                and current_epoch != 0
+            ):
+                checkpoint_suffix = f"model_epoch_{current_epoch}"
+                self.model_class.save_model(
+                    os.path.join(os.getcwd(), checkpoint_suffix)
+                )
         hydra_logger.info(
             f"Trainer finished training sklearn model for {cfg.trainer.train_epochs} epochs!"
         )
+        self.model_class.save_model(os.path.join(os.getcwd(), "final_model"))
         return
 
     def run_sklearn_validation_epoch(
@@ -80,6 +91,14 @@ class TextClassificationTrainer:
             predicted_labels = self.model_class(
                 paper_features, return_predicted_labels=True
             )
+            paper_labels = np.array(paper_labels, dtype=np.int32)
+            self.valid_metrics(predicted_labels, paper_labels)
+        epoch_summary_valid_metrics = (
+            self.valid_metrics.compute_global_metric_performance()
+        )
+        hydra_logger.info(
+            f"Validation metrics summary: P = {epoch_summary_valid_metrics['precision'].item()} R = {epoch_summary_valid_metrics['recall'].item()} F1 = {epoch_summary_valid_metrics['f1'].item()} Acc = {epoch_summary_valid_metrics['accuracy'].item()}"
+        )
         return
 
     def run_sklearn_training_epoch(self, train_reader: SklearnTextClassificationReader):
