@@ -66,9 +66,20 @@ class TextClassificationTrainer:
                 self.full_config.trainer.model_framework, self.full_config
             )
             self.run_sklearn_training_epoch(self.train_reader)
+            self.run_sklearn_validation_epoch(self.valid_reader)
         hydra_logger.info(
             f"Trainer finished training sklearn model for {cfg.trainer.train_epochs} epochs!"
         )
+        return
+
+    def run_sklearn_validation_epoch(
+        self, valid_reader: SklearnTextClassificationReader
+    ):
+        for valid_minibatch in valid_reader:
+            paper_features, paper_labels, _ = valid_minibatch
+            predicted_labels = self.model_class(
+                paper_features, return_predicted_labels=True
+            )
         return
 
     def run_sklearn_training_epoch(self, train_reader: SklearnTextClassificationReader):

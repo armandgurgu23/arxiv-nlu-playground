@@ -13,9 +13,9 @@ class SklearnModel(MLModel):
     def __init__(self, model_config: Dict):
         super().__init__(model_config)
 
-    def __call__(self, input_data: Any):
+    def __call__(self, input_data: Any, return_predicted_labels: bool = False):
         # TODO: Change the type above later!
-        return super().__call__(input_data)
+        return super().__call__(input_data, return_predicted_labels)
 
     def save_model(self, model_path: str):
         mlflow.sklearn.save_model(
@@ -51,10 +51,13 @@ class SklearnTextClassifier(SklearnModel):
         self.model.partial_fit(prediction_logits, ground_truth, classes=self.class_ids)
         return
 
-    def forward_pass(self, input_data: Any):
+    def forward_pass(self, input_data: Any, return_predicted_labels: bool = False):
         if hasattr(self, "feature_preprocessors"):
             input_data = self.feature_preprocessors.fit_transform(input_data)
-        return input_data
+        if return_predicted_labels:
+            return self.model.predict(input_data)
+        else:
+            return input_data
 
     def setup_feature_preprocessor(self, feature_preprocessor_config: Dict):
         pipeline_steps = []

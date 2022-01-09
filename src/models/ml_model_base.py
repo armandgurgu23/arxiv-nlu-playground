@@ -6,8 +6,8 @@ class MLModel:
         self.model_config = model_config
         self.model = self.initialize_model_architecture(self.model_config)
 
-    def __call__(self, input_data: Any):
-        return self.forward_pass(input_data)
+    def __call__(self, input_data: Any, return_predicted_labels: bool = False):
+        return self.forward_pass(input_data, return_predicted_labels)
 
     def compute_loss(self, prediction_logits: Any, ground_truth: Any):
         raise NotImplementedError(
@@ -19,7 +19,7 @@ class MLModel:
             "Overwrite this method for initializing model architecture!"
         )
 
-    def forward_pass(self, input_data: Any):
+    def forward_pass(self, input_data: Any, return_predicted_labels: bool):
         raise NotImplementedError("Overwrite this method for the forward pass logic!")
 
     def load_model(self, model_path: str):
