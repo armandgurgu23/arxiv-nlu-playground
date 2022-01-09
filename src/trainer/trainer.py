@@ -6,6 +6,7 @@ from metrics.text_classification_metrics import TextClassificationMetrics
 from logging import getLogger
 import numpy as np
 import os
+import mlflow
 
 hydra_logger = getLogger(__name__)
 
@@ -58,29 +59,51 @@ class TextClassificationTrainer:
                 f"Trainer does not support training for framework {self.full_config.trainer.model_framework}!"
             )
 
+    def get_mlflow_tracking_uri_and_experiment_name(self):
+        curr_path = os.getcwd()
+        if "temp_save" in curr_path:
+            return (
+                curr_path,
+                f"{self.full_config.trainer.experiment_task}_{curr_path.split('/')[-1]}",
+            )
+        else:
+            raise NotImplementedError(
+                "Apply processing on path to be used for MLflow when running actual experiments!"
+            )
+
     def run_sklearn_training_loop(self, cfg: DictConfig):
         hydra_logger.info(
             f"Trainer initialized sklearn model! Training model for {cfg.trainer.train_epochs} epochs!"
         )
-        for current_epoch in range(cfg.trainer.train_epochs):
-            hydra_logger.info(f"Starting training epoch {current_epoch}")
-            self.train_reader, self.valid_reader = self.initialize_dataset_readers(
-                self.full_config.trainer.model_framework, self.full_config
-            )
-            self.run_sklearn_training_epoch(self.train_reader)
-            self.run_sklearn_validation_epoch(self.valid_reader)
-            if (
-                current_epoch % self.full_config.trainer.save_after_num_epochs == 0
-                and current_epoch != 0
-            ):
-                checkpoint_suffix = f"model_epoch_{current_epoch}"
-                self.model_class.save_model(
-                    os.path.join(os.getcwd(), checkpoint_suffix)
+        (
+            mlflow_experiments_uri,
+            mlflow_experiment_name,
+        ) = self.get_mlflow_tracking_uri_and_experiment_name()
+        # Need to add /mlruns at the end of the URI, otherwise mlflow will
+        # try to select a subfolder at random.
+        mlflow.set_tracking_uri(f"file://{mlflow_experiments_uri}/mlruns")
+        mlflow_experiment_id = mlflow.create_experiment(mlflow_experiment_name)
+        with mlflow.start_run(experiment_id=mlflow_experiment_id):
+            mlflow.log_artifacts(os.path.join(os.getcwd(), ".hydra"))
+            for current_epoch in range(cfg.trainer.train_epochs):
+                hydra_logger.info(f"Starting training epoch {current_epoch}")
+                self.train_reader, self.valid_reader = self.initialize_dataset_readers(
+                    self.full_config.trainer.model_framework, self.full_config
                 )
-        hydra_logger.info(
-            f"Trainer finished training sklearn model for {cfg.trainer.train_epochs} epochs!"
-        )
-        self.model_class.save_model(os.path.join(os.getcwd(), "final_model"))
+                self.run_sklearn_training_epoch(self.train_reader)
+                self.run_sklearn_validation_epoch(self.valid_reader)
+                if (
+                    current_epoch % self.full_config.trainer.save_after_num_epochs == 0
+                    and current_epoch != 0
+                ):
+                    checkpoint_suffix = f"model_epoch_{current_epoch}"
+                    self.model_class.save_model(
+                        os.path.join(os.getcwd(), checkpoint_suffix)
+                    )
+            hydra_logger.info(
+                f"Trainer finished training sklearn model for {cfg.trainer.train_epochs} epochs!"
+            )
+            self.model_class.save_model(os.path.join(os.getcwd(), "final_model"))
         return
 
     def run_sklearn_validation_epoch(

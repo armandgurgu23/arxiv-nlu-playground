@@ -37,8 +37,6 @@ class SklearnTextClassifier(SklearnModel):
     def __init__(self, model_config: Dict, class_ids: List[int]):
         super().__init__(model_config)
         self.class_ids = class_ids
-        print(self.class_ids)
-        print("Class ids of the model!")
 
     def initialize_model_architecture(self, model_config: Dict):
         if model_config.sklearn_model_config.feature_preprocessing:

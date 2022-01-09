@@ -1,6 +1,6 @@
 experiment_task: text_classification
 model_framework: sklearn
-train_epochs: 4
-save_after_num_epochs: 2
+train_epochs: 25
+save_after_num_epochs: 5
 
 
