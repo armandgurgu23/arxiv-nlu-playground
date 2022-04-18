@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple, Any
 from omegaconf import DictConfig
 from models.sklearn_text_classifier import SklearnTextClassifier
 from data.experiment_corpus_readers import SklearnTextClassificationReader
@@ -130,6 +130,26 @@ class TextClassificationTrainer:
             # Run a forward pass on the sklearn model.
             prediction_logits = self.model_class(paper_features)
             self.model_class.compute_loss(prediction_logits, paper_labels)
+            if self.full_config.trainer.log_metrics_on_train_set:
+                self.log_metrics_on_training_minibatch(train_minibatch)
+        if self.full_config.trainer.log_metrics_on_train_set:
+            epoch_summary_train_metrics = (
+                self.train_metrics.compute_global_metric_performance()
+            )
+            hydra_logger.info(
+                f"Training metrics summary: P = {epoch_summary_train_metrics['precision'].item()} R = {epoch_summary_train_metrics['recall'].item()} F1 = {epoch_summary_train_metrics['f1'].item()} Acc = {epoch_summary_train_metrics['accuracy'].item()}"
+            )
+        return
+
+    def log_metrics_on_training_minibatch(
+        self, train_minibatch: Tuple[Any, list, list]
+    ):
+        paper_features, paper_labels, _ = train_minibatch
+        predicted_labels = self.model_class(
+            paper_features, return_predicted_labels=True
+        )
+        paper_labels = np.array(paper_labels, dtype=np.int32)
+        self.train_metrics(predicted_labels, paper_labels)
         return
 
     def run_tensorflow_training_loop(self, cfg: DictConfig):

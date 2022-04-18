@@ -2,5 +2,7 @@ experiment_task: text_classification
 model_framework: sklearn
 train_epochs: 25
 save_after_num_epochs: 5
+log_metrics_on_train_set: True
+
 
 
